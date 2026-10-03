@@ -1,31 +1,99 @@
-const express=require("express");
-const axios=require("axios");
-const books=require("../data/books");
-const router=express.Router();
-router.get("/",(req,res)=>res.json(books));
-router.get("/isbn/:isbn",(req,res)=>{
- const b=books.find(x=>x.isbn.toLowerCase()===req.params.isbn.toLowerCase());
- return b?res.json(b):res.status(404).json({message:"Book not found"});
+
+const express = require("express");
+const axios = require("axios");
+const books = require("../data/books");
+
+const router = express.Router();
+
+const BASE_URL = "http://localhost:5000/books";
+
+// Get all books using async/await
+async function getAllBooks() {
+    try {
+        const response = await axios.get(BASE_URL);
+        return response.data;
+    } catch (error) {
+        console.error(error.message);
+        throw error;
+    }
+}
+
+// Get book by ISBN using promise callback
+function getBookByISBN(isbn) {
+    return axios.get(`${BASE_URL}/isbn/${encodeURIComponent(isbn)}`)
+        .then(response => response.data)
+        .catch(error => {
+            console.error(error.message);
+            throw error;
+        });
+}
+
+// Get books by author using promise callback
+function getBooksByAuthor(author) {
+    return axios.get(`${BASE_URL}/author/${encodeURIComponent(author)}`)
+        .then(response => response.data)
+        .catch(error => {
+            console.error(error.message);
+            throw error;
+        });
+}
+
+// Get books by title using async/await
+async function getBooksByTitle(title) {
+    try {
+        const response = await axios.get(
+            `${BASE_URL}/title/${encodeURIComponent(title)}`
+        );
+        return response.data;
+    } catch (error) {
+        console.error(error.message);
+        throw error;
+    }
+}
+
+// Express routes
+router.get("/", (req, res) => {
+    res.json(books);
 });
-router.get("/author/:author",(req,res)=>{
- const q=req.params.author.toLowerCase();
- res.json(books.filter(b=>b.author.toLowerCase().includes(q)));
+
+router.get("/isbn/:isbn", (req, res) => {
+    const book = books.find(
+        item => item.isbn.toLowerCase() === req.params.isbn.toLowerCase()
+    );
+    if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+    }
+    res.json(book);
 });
-router.get("/title/:title",(req,res)=>{
- const q=req.params.title.toLowerCase();
- res.json(books.filter(b=>b.title.toLowerCase().includes(q)));
+
+router.get("/author/:author", (req, res) => {
+    const author = req.params.author.toLowerCase();
+    const result = books.filter(
+        book => book.author.toLowerCase().includes(author)
+    );
+    res.json(result);
 });
-router.get("/:isbn/review",(req,res)=>{
- const b=books.find(x=>x.isbn.toLowerCase()===req.params.isbn.toLowerCase());
- return b?res.json(b.reviews):res.status(404).json({message:"Book not found"});
+
+router.get("/title/:title", (req, res) => {
+    const title = req.params.title.toLowerCase();
+    const result = books.filter(
+        book => book.title.toLowerCase().includes(title)
+    );
+    res.json(result);
 });
-// Axios examples for the required async/await and promise-callback approaches.
-async function getAllBooks(url="http://localhost:5000/books"){return (await axios.get(url)).data;}
-function getBooksByAuthor(author,url="http://localhost:5000/books"){return axios.get(`${url}/author/${encodeURIComponent(author)}`).then(r=>r.data);}
-function getBooksByTitle(title,url="http://localhost:5000/books"){return axios.get(`${url}/title/${encodeURIComponent(title)}`).then(r=>r.data);}
-function getBookByISBN(isbn,url="http://localhost:5000/books"){return axios.get(`${url}/isbn/${encodeURIComponent(isbn)}`).then(r=>r.data);}
-module.exports=router;
-module.exports.getAllBooks=getAllBooks;
-module.exports.getBooksByAuthor=getBooksByAuthor;
-module.exports.getBooksByTitle=getBooksByTitle;
-module.exports.getBookByISBN=getBookByISBN;
+
+router.get("/:isbn/review", (req, res) => {
+    const book = books.find(
+        item => item.isbn.toLowerCase() === req.params.isbn.toLowerCase()
+    );
+    if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+    }
+    res.json(book.reviews);
+});
+
+module.exports = router;
+module.exports.getAllBooks = getAllBooks;
+module.exports.getBookByISBN = getBookByISBN;
+module.exports.getBooksByAuthor = getBooksByAuthor;
+module.exports.getBooksByTitle = getBooksByTitle;
