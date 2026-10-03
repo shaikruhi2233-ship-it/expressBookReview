@@ -1,0 +1,14 @@
+const express=require("express");
+const session=require("express-session");
+const general=require("./routes/general");
+const auth=require("./routes/auth_users");
+const reviews=require("./routes/reviews");
+const app=express();
+app.use(express.json());
+app.use(session({secret:process.env.SESSION_SECRET||"dev-secret-change-me",resave:false,saveUninitialized:false,cookie:{httpOnly:true,sameSite:"lax"}}));
+app.get("/",(req,res)=>res.json({message:"Welcome to the Express Book Review API"}));
+app.use("/books",general);
+app.use("/auth",auth);
+app.use("/books",reviews);
+const port=process.env.PORT||5000;
+app.listen(port,()=>console.log(`API running at http://localhost:${port}`));
